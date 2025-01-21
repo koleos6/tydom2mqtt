@@ -5,7 +5,7 @@ on:
     tags: [ "*.*.*" ]
 
 env:
-  REGISTRY_IMAGE: koleos6/tydom2mqtt
+  REGISTRY_IMAGE: AlBla84140/tydom2mqtt
 
 jobs:
   build:

@@ -1,0 +1,84 @@
+name: 🤖 Tydom2mqtt
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  lint:
+    name: ✨ Ruff
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v4
+
+      - name: ✨ Ruff check formatting
+        uses: astral-sh/ruff-action@v2
+        with:
+          src: "./app"
+          args: "format --check"
+
+      - name: ✨ Ruff lint
+        uses: astral-sh/ruff-action@v2
+        with:
+          src: "./app"
+          args: "check"
+
+  test:
+    name: 🧪 Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: |
+            app/requirements.txt
+            app/requirements.dev.txt
+
+      - name: 📦 Install dependencies
+        working-directory: app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements.dev.txt
+
+      - name: 🧪 Run pytest
+        working-directory: app
+        run: |
+          # Exit code 5 means "no tests collected" — not a failure while the
+          # suite is still being built out.
+          pytest || [ $? -eq 5 ]
+
+  docker:
+    name: 🐳 Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🐳 Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

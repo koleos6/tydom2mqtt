@@ -1,5 +1,20 @@
 # Changelog
 
+# 3.6.0
+- :star: Add support for garage door
+
+# 3.5.3
+- :fire: Fix Light command
+
+# 3.5.2
+- :fire: Fix HVAC actions on cooling mode
+
+# 3.5.1
+- :fire: Fix configuration not overrided when using HASS.io
+
+# 3.5.0
+- :star: Add HVAC switch mode
+
 #3.4.8
 - :fire: Fix garage door to allow setting a specific position
 

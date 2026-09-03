@@ -1,6 +1,8 @@
 # tydom2MQTT
 
-![](https://github.com/koleos6/tydom2mqtt/raw/master/docs/tydom2mqtt_logo_250.png)
+![License](https://img.shields.io/github/license/koleos6/tydom2mqtt)
+
+![](docs/tydom2mqtt_logo_250.png)
 
 > **Deltadore Tydom to MQTT Bridge**
 Fork from fmartinou tydom2mqtt (https://fmartinou.github.io/tydom2mqtt/)
@@ -22,6 +24,3 @@ Fork from fmartinou tydom2mqtt (https://fmartinou.github.io/tydom2mqtt/)
 ## License
 
 This project is licensed under the [MIT license](https://github.com/koleos6/tydom2mqtt/blob/master/LICENSE).
- 
-
-  

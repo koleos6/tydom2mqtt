@@ -6,3 +6,4 @@ app/.venv/
 .gitignore
 .vs/
 *.env
+.venv/

@@ -1,5 +1,20 @@
 # Changelog
 
+#4.0.0
+- :boom: **Breaking**: `TYDOM_PASSWORD` is removed. In local mode the hub is
+  paired at startup instead: press its button once when the logs ask for it,
+  and the password is read and stored under `TYDOM_STATE_DIR` (`/data` by
+  default). Upgrading therefore requires one button press, and a persistent
+  volume on `/data` when running outside a Home Assistant add-on. Remote mode
+  (no `TYDOM_IP`) now requires `DELTADORE_LOGIN` and `DELTADORE_PASSWORD`.
+- :star: Add `tools/get_local_password.py` to read the hub's local password by
+  hand, for inspection or recovery
+- :fire: Fix local Digest authentication: the realm was hardcoded in lowercase
+  while recent firmwares answer `Protected Area`, which made every local
+  connection fail with HTTP 401 no matter the password
+- :fire: A failed Delta Dore lookup no longer wipes the password and fails with
+  a misleading "Tydom password must be defined"
+
 # 3.6.0
 - :star: Add support for garage door
 

@@ -266,7 +266,7 @@ class TydomClient:
                 logger.error(
                     "Nobody pressed the button on the Tydom hub, so no local "
                     "password could be obtained. Restart and press it to "
-                    "pair, or set TYDOM_PASSWORD explicitly.")
+                    "pair.")
                 sys.exit(1)
 
         http_headers = {

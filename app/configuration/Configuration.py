@@ -148,6 +148,12 @@ class Configuration:
                     ):
                         self.tydom_polling_interval = int(data[TYDOM_POLLING_INTERVAL])
 
+                    if (
+                        TYDOM_PAIRING_TIMEOUT in data
+                        and data[TYDOM_PAIRING_TIMEOUT] != ""
+                    ):
+                        self.tydom_pairing_timeout = int(data[TYDOM_PAIRING_TIMEOUT])
+
                     if DELTADORE_LOGIN in data and data[DELTADORE_LOGIN] != "":
                         self.deltadore_login = data[DELTADORE_LOGIN]
 

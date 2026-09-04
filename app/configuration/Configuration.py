@@ -198,6 +198,14 @@ class Configuration:
                             MQTT_SSL, data[MQTT_SSL], self.mqtt_ssl
                         )
 
+                    if HEALTH_ENABLED in data and data[HEALTH_ENABLED] != "":
+                        self.health_enabled = self._parse_bool(
+                            HEALTH_ENABLED, data[HEALTH_ENABLED], self.health_enabled
+                        )
+
+                    if HEALTH_PORT in data and data[HEALTH_PORT] != "":
+                        self.health_port = int(data[HEALTH_PORT])
+
                 except Exception as e:
                     logger.error("Parsing error %s", e)
 

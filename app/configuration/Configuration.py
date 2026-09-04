@@ -21,7 +21,6 @@ TYDOM_ALARM_NIGHT_ZONE = "TYDOM_ALARM_NIGHT_ZONE"
 TYDOM_ALARM_PIN = "TYDOM_ALARM_PIN"
 TYDOM_IP = "TYDOM_IP"
 TYDOM_MAC = "TYDOM_MAC"
-TYDOM_PASSWORD = "TYDOM_PASSWORD"
 TYDOM_POLLING_INTERVAL = "TYDOM_POLLING_INTERVAL"
 TYDOM_STATE_DIR = "TYDOM_STATE_DIR"
 TYDOM_PAIRING_TIMEOUT = "TYDOM_PAIRING_TIMEOUT"
@@ -67,15 +66,12 @@ class Configuration:
         self.tydom_alarm_pin = os.getenv(TYDOM_ALARM_PIN, None)
         self.tydom_ip = os.getenv(TYDOM_IP, "mediation.tydom.com")
         self.tydom_mac = os.getenv(TYDOM_MAC, None)
-        self.tydom_password = os.getenv(TYDOM_PASSWORD, None)
+        # Never configured directly: local mode pairs with the hub, remote
+        # mode gets it from the Delta Dore cloud.
+        self.tydom_password = None
         self.tydom_polling_interval = os.getenv(TYDOM_POLLING_INTERVAL, 300)
         self.tydom_state_dir = os.getenv(TYDOM_STATE_DIR, "/data")
         self.tydom_pairing_timeout = os.getenv(TYDOM_PAIRING_TIMEOUT, 180)
-        # Remember whether the user supplied a password, so that neither the
-        # cloud lookup nor the stored value silently overrides their choice.
-        self.tydom_password_is_explicit = (
-            self.tydom_password is not None and self.tydom_password != ""
-        )
         self.password_store = PasswordStore(self.tydom_state_dir)
         self.deltadore_login = os.getenv(DELTADORE_LOGIN, None)
         self.deltadore_password = os.getenv(DELTADORE_PASSWORD, None)
@@ -106,14 +102,10 @@ class Configuration:
     def resolve_local_password(self):
         """Reuse the local password kept from a previous pairing, if any.
 
-        An explicitly configured password always wins, so this never
-        overrides what the user asked for. When nothing is available the
-        password stays empty and the client pairs with the hub at startup.
+        When nothing is stored the password stays empty and the client pairs
+        with the hub at startup, which is the only way to obtain it.
         """
         if not self.is_local_mode():
-            return
-
-        if self.tydom_password is not None and self.tydom_password != "":
             return
 
         stored = self.password_store.read()
@@ -139,9 +131,6 @@ class Configuration:
 
                     if TYDOM_IP in data and data[TYDOM_IP] != "":
                         self.tydom_ip = data[TYDOM_IP]
-
-                    if TYDOM_PASSWORD in data and data[TYDOM_PASSWORD] != "":
-                        self.tydom_password = data[TYDOM_PASSWORD]
 
                     if (
                         TYDOM_POLLING_INTERVAL in data
@@ -223,12 +212,12 @@ class Configuration:
 
         if self.is_local_mode():
             # The cloud hands out the gateway's *remote* password, which a
-            # local hub rejects. Overriding here would break a working setup.
+            # local hub rejects. Local mode pairs with the hub instead.
             logger.warning(
                 "Delta Dore cloud credentials are set but TYDOM_IP points at "
                 "a local gateway (%s). The cloud password is a different "
-                "secret and does not authenticate locally, so it is ignored. "
-                "Leave TYDOM_PASSWORD empty to pair with the hub's button.",
+                "secret and does not authenticate locally, so it is ignored: "
+                "the hub's button is used to pair instead.",
                 self.tydom_ip,
             )
             return
@@ -276,11 +265,18 @@ class Configuration:
                 # A local hub gives out its own password once its button is
                 # pressed, so this is a normal first-run state, not an error.
                 logger.info(
-                    "No Tydom password configured; will pair with the local "
-                    "hub at startup (its button will have to be pressed once)"
+                    "No stored password yet; will pair with the local hub at "
+                    "startup (its button will have to be pressed once)"
                 )
             else:
-                logger.error("Tydom password must be defined")
+                logger.error(
+                    "No password available for %s. Remote mode gets it from "
+                    "your Delta Dore account, so DELTADORE_LOGIN and "
+                    "DELTADORE_PASSWORD must be set. To connect locally "
+                    "instead, set TYDOM_IP to the hub address on your LAN and "
+                    "pair with its button.",
+                    self.tydom_ip,
+                )
                 sys.exit(1)
 
         logger.info("The configuration is valid")

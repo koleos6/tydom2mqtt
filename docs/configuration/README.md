@@ -3,19 +3,22 @@
 
 ## Environment variables
 
-You need one of the following to authenticate: `TYDOM_PASSWORD`, `DELTADORE_LOGIN` +
-`DELTADORE_PASSWORD` (your Delta Dore account is used to retrieve the Tydom
-password), or nothing at all when `TYDOM_IP` points at a hub on your LAN — in
-that case `tydom2mqtt` pairs with the hub instead: on the first start it asks
-you to press the button on the hub, reads the local password it hands out,
-and stores it under `TYDOM_STATE_DIR`. The button is only needed that once.
+There is no password to configure.
+
+Set `TYDOM_IP` to your hub's address on the LAN (recommended). On the first
+start `tydom2mqtt` asks you to press the button on the hub, reads the hub's
+own local password, and stores it under `TYDOM_STATE_DIR`. The button is only
+needed that once.
+
+Without `TYDOM_IP` the connection goes through Delta Dore's relay, which has
+no button to press: `DELTADORE_LOGIN` and `DELTADORE_PASSWORD` are then
+required so the password can be fetched from your account.
 
 | Environment variable              | Required       | Supported values                                                                                                                                                                                                           | Default value when missing |
 |-----------------------------------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------|
 | TYDOM_MAC                         | :red_circle:   | Tydom MAC address (starting with `001A...`)                                                                                                                                                                                |                            |
-| DELTADORE_LOGIN                   | :white_circle: | Delta Dore account login                                                                                                                                                                                                   |                            |
-| DELTADORE_PASSWORD                | :white_circle: | Delta Dore account password                                                                                                                                                                                                |                            |
-| TYDOM_PASSWORD                    | :white_circle: | Tydom password. Not needed for a local connection, see above                                                                                                                                                              |                            |
+| DELTADORE_LOGIN                   | :white_circle: | Delta Dore account login. Required in remote mode only (no `TYDOM_IP`)                                                                                                                                                     |                            |
+| DELTADORE_PASSWORD                | :white_circle: | Delta Dore account password. Required in remote mode only (no `TYDOM_IP`)                                                                                                                                                  |                            |
 | TYDOM_IP                          | :white_circle: | Tydom IPv4 address or FQDN. Set it to connect locally and pair with the hub's button                                                                                                                                       | `mediation.tydom.com`      |
 | TYDOM_STATE_DIR                   | :white_circle: | Where the local password obtained by pairing is stored. Must be persistent, otherwise the button is needed on every start                                                                                                   | `/data`                    |
 | TYDOM_PAIRING_TIMEOUT             | :white_circle: | How long to wait for the hub's button at startup, in seconds                                                                                                                                                               | `180`                      |
@@ -35,35 +38,9 @@ and stores it under `TYDOM_STATE_DIR`. The button is only needed that once.
 
 ## Complete example
 
-Using a Tydom password (works locally or through the Delta Dore relay):
-
-<!-- tabs:start -->
-#### **Docker Compose**
-```yaml
-version: '3'
-
-services:
-  tydom2mqtt:
-    image: ghcr.io/tydom2mqtt/tydom2mqtt
-    container_name: tydom2mqtt
-    environment:
-      - TYDOM_MAC=001A25XXXXXX
-      - TYDOM_PASSWORD=azerty123456789
-      - TYDOM_IP=192.168.1.33
-```
-#### **Docker**
-```bash
-docker run -d --name tydom2mqtt \
-  -e TYDOM_MAC="001A25XXXXXX" \
-  -e TYDOM_PASSWORD="azerty123456789" \
-  -e TYDOM_IP="192.168.1.33" \  
-  ghcr.io/tydom2mqtt/tydom2mqtt
-```
-<!-- tabs:end -->
-
-Or, for a local connection, pairing with the hub's button instead (a
+For a local connection (recommended), pairing with the hub's button. A
 persistent volume on `/data` is required, otherwise the button is needed on
-every start):
+every start:
 
 <!-- tabs:start -->
 #### **Docker Compose**
@@ -86,6 +63,32 @@ docker run -d --name tydom2mqtt \
   -e TYDOM_MAC="001A25XXXXXX" \
   -e TYDOM_IP="192.168.1.33" \
   -v "$(pwd)/tydom-data:/data" \
+  ghcr.io/tydom2mqtt/tydom2mqtt
+```
+<!-- tabs:end -->
+
+Or through the Delta Dore relay, with your account credentials:
+
+<!-- tabs:start -->
+#### **Docker Compose**
+```yaml
+version: '3'
+
+services:
+  tydom2mqtt:
+    image: ghcr.io/tydom2mqtt/tydom2mqtt
+    container_name: tydom2mqtt
+    environment:
+      - TYDOM_MAC=001A25XXXXXX
+      - DELTADORE_LOGIN=your@email.com
+      - DELTADORE_PASSWORD=your-delta-dore-password
+```
+#### **Docker**
+```bash
+docker run -d --name tydom2mqtt \
+  -e TYDOM_MAC="001A25XXXXXX" \
+  -e DELTADORE_LOGIN="your@email.com" \
+  -e DELTADORE_PASSWORD="your-delta-dore-password" \
   ghcr.io/tydom2mqtt/tydom2mqtt
 ```
 <!-- tabs:end -->

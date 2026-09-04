@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Read a Tydom hub's *local* password by pairing with it once.
 
-tydom2mqtt normally does this on its own: start it with no TYDOM_PASSWORD in
-local mode, press the hub's button when asked, and it stores the password for
-you. This tool is the manual equivalent, useful to inspect the value or to
-recover it without running the app.
+tydom2mqtt normally does this on its own: start it in local mode, press the
+hub's button when asked, and it stores the password for you. This tool is the
+manual equivalent, useful to inspect the value or to recover it without
+running the app.
 
 Why the password matters
 ------------------------

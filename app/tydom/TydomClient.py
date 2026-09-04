@@ -187,8 +187,9 @@ class TydomClient:
             # not the answer to this request.
             for _ in range(5):
                 reply = await asyncio.wait_for(connection.recv(), timeout=5)
-                text = reply if isinstance(reply, str) else reply.decode(
-                    errors="replace")
+                text = (
+                    reply if isinstance(reply, str) else reply.decode(errors="replace")
+                )
                 if "/configs/gateway/password" in text:
                     return TydomClient.extract_password(text)
             return None
@@ -202,7 +203,7 @@ class TydomClient:
     def extract_password(response):
         """Pull the password out of a /configs/gateway/password response."""
         separator = response.find("\r\n\r\n")
-        body = response[separator + 4:] if separator != -1 else response
+        body = response[separator + 4 :] if separator != -1 else response
 
         payload = ""
         lines = body.split("\r\n")
@@ -236,12 +237,15 @@ class TydomClient:
             "No usable local password for the Tydom hub at %s. "
             "PRESS THE BUTTON ON THE HUB NOW: it will be read automatically "
             "and stored, and will not be asked for again. Waiting up to %ss.",
-            self.host, self.pairing_timeout)
+            self.host,
+            self.pairing_timeout,
+        )
 
         deadline = time.monotonic() + self.pairing_timeout
         while time.monotonic() < deadline:
             password = await self.read_local_password(
-                self.host, self.mac, self.ssl_context)
+                self.host, self.mac, self.ssl_context
+            )
             if password is not None:
                 logger.info("Paired with the Tydom hub, local password read")
                 self.password = password
@@ -250,13 +254,14 @@ class TydomClient:
                 return True
             remaining = int(deadline - time.monotonic())
             logger.info(
-                "Hub still locked, press its button (%ss left)", max(remaining, 0))
+                "Hub still locked, press its button (%ss left)", max(remaining, 0)
+            )
             await asyncio.sleep(PAIRING_RETRY_DELAY)
 
         return False
 
     async def connect(self, allow_pairing=True):
-        logger.info('Connecting to tydom')
+        logger.info("Connecting to tydom")
 
         # A local hub can hand out its own password once its button is
         # pressed, so an empty password is not a fatal configuration error
@@ -266,7 +271,8 @@ class TydomClient:
                 logger.error(
                     "Nobody pressed the button on the Tydom hub, so no local "
                     "password could be obtained. Restart and press it to "
-                    "pair.")
+                    "pair."
+                )
                 sys.exit(1)
 
         http_headers = {
@@ -307,8 +313,7 @@ class TydomClient:
             # A gateway in its pairing window answers without challenging, so
             # only authenticate when we were actually challenged.
             challenge = self.parse_digest_challenge(www_authenticate)
-            websocket_headers = {
-                "Authorization": self.build_digest_headers(challenge)}
+            websocket_headers = {"Authorization": self.build_digest_headers(challenge)}
 
         logger.debug("Upgrading http connection to websocket....")
 
@@ -336,8 +341,8 @@ class TydomClient:
         except websockets.exceptions.InvalidStatusCode as e:
             if e.status_code != 401:
                 logger.error(
-                    "Tydom rejected the websocket handshake (HTTP %s)",
-                    e.status_code)
+                    "Tydom rejected the websocket handshake (HTTP %s)", e.status_code
+                )
                 sys.exit(1)
 
             # The credentials were refused. On a local hub they may simply
@@ -346,7 +351,8 @@ class TydomClient:
             if not self.remote_mode and allow_pairing:
                 logger.warning(
                     "The Tydom hub refused the local password (HTTP 401). "
-                    "Discarding it and pairing again.")
+                    "Discarding it and pairing again."
+                )
                 if self.password_store is not None:
                     self.password_store.clear()
                 self.password = None
@@ -356,13 +362,15 @@ class TydomClient:
                     return await self.connect(allow_pairing=False)
                 logger.error(
                     "Nobody pressed the button on the Tydom hub, so the "
-                    "local password could not be renewed.")
+                    "local password could not be renewed."
+                )
                 sys.exit(1)
 
             logger.error(
                 "Tydom rejected the credentials (HTTP 401). The gateway's "
                 "local password is NOT the one returned by the Delta Dore "
-                "cloud API: they are two different secrets.")
+                "cloud API: they are two different secrets."
+            )
             sys.exit(1)
         except Exception as e:
             logger.error("Exception when trying to connect with websocket (%s)", e)
@@ -395,7 +403,8 @@ class TydomClient:
         return {
             key: quoted or unquoted
             for key, quoted, unquoted in re.findall(
-                r'(\w+)=(?:"([^"]*)"|([^,\s]+))', header_value)
+                r'(\w+)=(?:"([^"]*)"|([^,\s]+))', header_value
+            )
         }
 
     # Build the headers of Digest Authentication

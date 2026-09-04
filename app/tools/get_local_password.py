@@ -27,7 +27,8 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tydom.TydomClient import TydomClient, PAIRING_RETRY_DELAY  # noqa: E402
+# Imported after the path is set up, so the tool runs from any directory.
+from tydom.TydomClient import PAIRING_RETRY_DELAY, TydomClient
 
 
 async def read_password(host, mac, timeout):
@@ -49,29 +50,40 @@ async def read_password(host, mac, timeout):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Read a Tydom hub's local password (one-time pairing).")
-    parser.add_argument("--host", required=True,
-                        help="gateway IP address on your LAN")
-    parser.add_argument("--mac", required=True,
-                        help="gateway MAC address, e.g. 001A25XXXXXX")
-    parser.add_argument("--timeout", type=int, default=120,
-                        help="how long to wait for the button press (seconds)")
+        description="Read a Tydom hub's local password (one-time pairing)."
+    )
+    parser.add_argument("--host", required=True, help="gateway IP address on your LAN")
+    parser.add_argument(
+        "--mac", required=True, help="gateway MAC address, e.g. 001A25XXXXXX"
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=120,
+        help="how long to wait for the button press (seconds)",
+    )
     args = parser.parse_args()
 
     print(f"Connecting to {args.host} ({args.mac}).")
-    print("Press the button on the Tydom hub now; waiting up to "
-          f"{args.timeout}s for its pairing window.\n")
+    print(
+        "Press the button on the Tydom hub now; waiting up to "
+        f"{args.timeout}s for its pairing window.\n"
+    )
 
     password = asyncio.run(read_password(args.host, args.mac, args.timeout))
 
     if password is None:
-        print("\nCould not read the password. Make sure you pressed the "
-              "button on the hub, and that the MAC and IP are correct.")
+        print(
+            "\nCould not read the password. Make sure you pressed the "
+            "button on the hub, and that the MAC and IP are correct."
+        )
         sys.exit(1)
 
     print(f"\nLocal password: {password}")
-    print("Do not use the Delta Dore cloud password for a local connection: "
-          "it is a different secret.")
+    print(
+        "Do not use the Delta Dore cloud password for a local connection: "
+        "it is a different secret."
+    )
 
 
 if __name__ == "__main__":

@@ -59,7 +59,9 @@ class PasswordStore:
             logger.warning(
                 "Could not store the Tydom local password in %s (%s). "
                 "The hub's button will be needed again on the next start.",
-                self.path, e)
+                self.path,
+                e,
+            )
             return False
 
         logger.info("Tydom local password stored in %s", self.path)
@@ -69,8 +71,7 @@ class PasswordStore:
         """Forget the stored password, so pairing starts over."""
         try:
             os.remove(self.path)
-            logger.info("Discarded the stored Tydom local password (%s)",
-                        self.path)
+            logger.info("Discarded the stored Tydom local password (%s)", self.path)
         except FileNotFoundError:
             pass
         except OSError as e:

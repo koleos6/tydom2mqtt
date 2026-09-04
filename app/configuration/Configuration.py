@@ -74,7 +74,8 @@ class Configuration:
         # Remember whether the user supplied a password, so that neither the
         # cloud lookup nor the stored value silently overrides their choice.
         self.tydom_password_is_explicit = (
-            self.tydom_password is not None and self.tydom_password != "")
+            self.tydom_password is not None and self.tydom_password != ""
+        )
         self.password_store = PasswordStore(self.tydom_state_dir)
         self.deltadore_login = os.getenv(DELTADORE_LOGIN, None)
         self.deltadore_password = os.getenv(DELTADORE_PASSWORD, None)
@@ -100,7 +101,7 @@ class Configuration:
         return configuration
 
     def is_local_mode(self):
-        return self.tydom_ip != 'mediation.tydom.com'
+        return self.tydom_ip != "mediation.tydom.com"
 
     def resolve_local_password(self):
         """Reuse the local password kept from a previous pairing, if any.
@@ -112,7 +113,7 @@ class Configuration:
         if not self.is_local_mode():
             return
 
-        if self.tydom_password is not None and self.tydom_password != '':
+        if self.tydom_password is not None and self.tydom_password != "":
             return
 
         stored = self.password_store.read()
@@ -228,18 +229,21 @@ class Configuration:
                 "a local gateway (%s). The cloud password is a different "
                 "secret and does not authenticate locally, so it is ignored. "
                 "Leave TYDOM_PASSWORD empty to pair with the hub's button.",
-                self.tydom_ip)
+                self.tydom_ip,
+            )
             return
 
         tydom_password = TydomClient.getTydomCredentials(
-            self.deltadore_login, self.deltadore_password, self.tydom_mac)
+            self.deltadore_login, self.deltadore_password, self.tydom_mac
+        )
 
         if tydom_password is None or tydom_password == "":
             # Losing a perfectly good password because the cloud lookup failed
             # would fail validation later with a misleading message.
             logger.warning(
                 "Could not retrieve the gateway password from Delta Dore. "
-                "Keeping the configured password, if any.")
+                "Keeping the configured password, if any."
+            )
             return
 
         self.tydom_password = tydom_password
@@ -273,7 +277,8 @@ class Configuration:
                 # pressed, so this is a normal first-run state, not an error.
                 logger.info(
                     "No Tydom password configured; will pair with the local "
-                    "hub at startup (its button will have to be pressed once)")
+                    "hub at startup (its button will have to be pressed once)"
+                )
             else:
                 logger.error("Tydom password must be defined")
                 sys.exit(1)

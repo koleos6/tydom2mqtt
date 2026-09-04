@@ -3,6 +3,7 @@ import http.client
 import json
 import logging
 import os
+import re
 import ssl
 import sys
 
@@ -173,15 +174,13 @@ class TydomClient:
 
         # Get authentication
         websocket_headers = {}
-        try:
-            # Local installations are unauthenticated but we don't *know* that for certain
-            # so we'll EAFP, try to use the header and fallback if we're
-            # unable.
-            nonce = res.headers["WWW-Authenticate"].split(",", 3)
-            # Build websocket headers
-            websocket_headers = {"Authorization": self.build_digest_headers(nonce)}
-        except AttributeError:
-            pass
+        www_authenticate = res.headers["WWW-Authenticate"]
+        if www_authenticate is not None:
+            # A gateway in its pairing window answers without challenging, so
+            # only authenticate when we were actually challenged.
+            challenge = self.parse_digest_challenge(www_authenticate)
+            websocket_headers = {
+                "Authorization": self.build_digest_headers(challenge)}
 
         logger.debug("Upgrading http connection to websocket....")
 
@@ -206,6 +205,20 @@ class TydomClient:
             logger.info("Connected to tydom")
             self.health_state.update_tydom_status(True)
             return self.connection
+        except websockets.exceptions.InvalidStatusCode as e:
+            if e.status_code == 401:
+                logger.error(
+                    "Tydom rejected the credentials (HTTP 401). The gateway's "
+                    "local password is NOT the one returned by the Delta Dore "
+                    "cloud API: they are two different secrets. Press the "
+                    "button on the Tydom hub, then read the local one with "
+                    "'python tools/get_local_password.py --host %s --mac %s'.",
+                    self.host, self.mac)
+            else:
+                logger.error(
+                    "Tydom rejected the websocket handshake (HTTP %s)",
+                    e.status_code)
+            sys.exit(1)
         except Exception as e:
             logger.error("Exception when trying to connect with websocket (%s)", e)
             sys.exit(1)
@@ -223,16 +236,35 @@ class TydomClient:
     def generate_random_key():
         return base64.b64encode(os.urandom(16))
 
+    @staticmethod
+    def parse_digest_challenge(header_value):
+        """Parse a "WWW-Authenticate: Digest ..." header into its directives.
+
+        The realm must be echoed back exactly as the gateway sent it: it feeds
+        the digest response hash (HA1 = MD5(username:realm:password)), so a
+        hardcoded realm silently produces a response that never matches, even
+        with the correct password. Recent Tydom firmwares answer with
+        realm="Protected Area", which no longer matches the value that used to
+        be hardcoded here.
+        """
+        return {
+            key: quoted or unquoted
+            for key, quoted, unquoted in re.findall(
+                r'(\w+)=(?:"([^"]*)"|([^,\s]+))', header_value)
+        }
+
     # Build the headers of Digest Authentication
-    def build_digest_headers(self, nonce):
+    def build_digest_headers(self, challenge):
         digest_auth = HTTPDigestAuth(self.mac, self.password)
         chal = dict()
-        chal["nonce"] = nonce[2].split("=", 1)[1].split('"')[1]
-        chal["realm"] = "ServiceMedia" if self.remote_mode is True else "protected area"
-        chal["qop"] = "auth"
+        chal["nonce"] = challenge["nonce"]
+        chal["realm"] = challenge["realm"]
+        chal["qop"] = challenge.get("qop", "auth")
+        if "opaque" in challenge:
+            chal["opaque"] = challenge["opaque"]
         digest_auth._thread_local.chal = chal
-        digest_auth._thread_local.last_nonce = nonce
-        digest_auth._thread_local.nonce_count = 1
+        digest_auth._thread_local.last_nonce = ""
+        digest_auth._thread_local.nonce_count = 0
         return digest_auth.build_digest_header(
             "GET",
             "https://{host}:443/mediation/client?mac={mac}&appli=1".format(
